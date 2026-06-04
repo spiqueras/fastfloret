@@ -1,3 +1,36 @@
+# fastfloret: fastText + floret for your Python needs
+
+This library is a fork of [floret](https://github.com/explosion/floret) modified
+to build and run in modern (>3.13) Python.
+
+A rough overview of the (intended) changes:
+- [Fix the build](https://github.com/explosion/floret/issues/31)
+- Allow using numpy 2 and up and make it mandatory
+- Generate and upload updated wheels to Pypi
+
+For compatibility, you may import it as floret:
+```python
+import fastfloret as floret
+```
+
+Or not, I won't judge.
+
+The following might be done in the future:
+- Port the improvements of [fasterText](https://github.com/kpu/fasterText) to this library
+- Revive the existing tests or add a minimal pytest suite
+
+The following are out of scope:
+- Modifying the module API in any way
+- Windows compatibility
+
+## But why?
+Because fastText _is_ fast, and it's a shame that both the original repo
+and spaCy's fork are now abandoned.
+
+The original floret and fastText READMES are provided below for reference.
+
+---
+
 <a href="https://explosion.ai"><img src="https://explosion.ai/assets/img/logo.svg" width="125" height="125" align="right" /></a>
 
 # floret: fastText + Bloom embeddings for compact, full-coverage vectors with spaCy

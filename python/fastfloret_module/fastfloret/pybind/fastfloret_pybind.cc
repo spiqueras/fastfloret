@@ -85,7 +85,7 @@ std::pair<std::vector<py::str>, std::vector<py::str>> getLineText(
   return std::pair<std::vector<py::str>, std::vector<py::str>>(words, labels);
 }
 
-PYBIND11_MODULE(floret_pybind, m) {
+PYBIND11_MODULE(fastfloret_pybind, m) {
   py::class_<fasttext::Args>(m, "args", py::module_local())
       .def(py::init<>())
       .def_readwrite("input", &fasttext::Args::input)

@@ -4,15 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from floret import train_supervised
-from floret import train_unsupervised
-from floret import util
-import floret
+from fastfloret import util
+import fastfloret as floret
 import os
 import subprocess
 import unittest
@@ -21,24 +14,11 @@ import random
 import sys
 import copy
 import numpy as np
-try:
-    import unicode
-except ImportError:
-    pass
-from floret.tests.test_configurations import get_supervised_models
-
-
-def eprint(cls, *args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+from fastfloret.tests.test_configurations import get_supervised_models
 
 
 def get_random_unicode(length):
     # See: https://stackoverflow.com/questions/1477294/generate-random-utf-8-string-in-python
-
-    try:
-        get_char = unichr
-    except NameError:
-        get_char = chr
 
     # Update this to include code point ranges to be sampled
     include_ranges = [
@@ -58,7 +38,7 @@ def get_random_unicode(length):
     ]
 
     alphabet = [
-        get_char(code_point)
+        chr(code_point)
         for current_range in include_ranges
         for code_point in range(current_range[0], current_range[1] + 1)
     ]
@@ -115,7 +95,7 @@ def build_unsupervised_model(data, kwargs):
         for line in data:
             tmpf.write((line + "\n").encode("UTF-8"))
         tmpf.flush()
-        model = train_unsupervised(input=tmpf.name, **kwargs)
+        model = floret.train_unsupervised(input=tmpf.name, **kwargs)
     return model
 
 
@@ -126,7 +106,7 @@ def build_supervised_model(data, kwargs):
             line = "__label__" + line.strip() + "\n"
             tmpf.write(line.encode("UTF-8"))
         tmpf.flush()
-        model = train_supervised(input=tmpf.name, **kwargs)
+        model = floret.train_supervised(input=tmpf.name, **kwargs)
     return model
 
 
@@ -137,10 +117,7 @@ def read_labels(data_file):
         for line in f:
             labels_line = []
             words_line = []
-            try:
-                line = unicode(line, "UTF-8").split()
-            except NameError:
-                line = line.split()
+            line = line.split()
             for word in line:
                 if word.startswith("__label__"):
                     labels_line.append(word)
@@ -203,7 +180,7 @@ class TestFastTextUnitPy(unittest.TestCase):
                         ("__label__" + line.strip() + "\n").encode("UTF-8")
                     )
                 tmpf2.flush()
-                model = train_supervised(input=tmpf.name, **kwargs)
+                model = floret.train_supervised(input=tmpf.name, **kwargs)
                 true_labels = []
                 all_words = []
                 with open(tmpf2.name, 'r') as fid:
@@ -500,7 +477,7 @@ def gen_sup_test(configuration, data_dir):
         configuration["quant_test"]["data"] = configuration["test"]["data"]
         output = os.path.join(tempfile.mkdtemp(), configuration["dataset"])
         print()
-        model = train_supervised(**configuration["args"])
+        model = floret.train_supervised(**configuration["args"])
         model.save_model(output + ".bin")
         check(
             model,

@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-import floret
+import fastfloret as floret
 import os
 import sys
 from numpy.testing import assert_almost_equal

@@ -3,16 +3,9 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-import floret_pybind as floret
+import fastfloret_pybind as floret
 import numpy as np
 import multiprocessing
-import sys
 from itertools import chain
 
 loss_name = floret.loss_name
@@ -40,7 +33,7 @@ class _Meter(object):
         else:
             y_scores, y_true = ([], ())
 
-        return np.array(y_scores, copy=False), np.array(y_true, copy=False)
+        return np.asarray(y_scores), np.asarray(y_true)
 
     def precision_recall_curve(self, label=None):
         """Return precision/recall curve"""
@@ -55,7 +48,7 @@ class _Meter(object):
         else:
             precision, recall = ([], ())
 
-        return np.array(precision, copy=False), np.array(recall, copy=False)
+        return np.asarray(precision), np.asarray(recall)
 
     def precision_at_recall(self, recall, label=None):
         """Return precision for a given recall"""
@@ -227,7 +220,7 @@ class _floret(object):
             else:
                 probs, labels = ([], ())
 
-            return labels, np.array(probs, copy=False)
+            return labels, np.asarray(probs)
 
     def get_input_matrix(self):
         """

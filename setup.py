@@ -7,22 +7,16 @@
 # LICENSE file in the root directory of this source tree.
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 import sys
 import setuptools
 import os
-import subprocess
 import platform
 import io
 import pybind11
 
-__version__ = '0.10.5'
+__version__ = '0.11.0'
 FASTTEXT_SRC = "src"
 
 # Based on https://github.com/pybind/python_example
@@ -53,9 +47,9 @@ fasttext_src_cc = list(
 
 ext_modules = [
     Extension(
-        str('floret_pybind'),
+        str('fastfloret_pybind'),
         [
-            str('python/floret_module/floret/pybind/floret_pybind.cc'),
+            str('python/fastfloret_module/fastfloret/pybind/fastfloret_pybind.cc'),
         ] + fasttext_src_cc,
         include_dirs=[
             # Path to pybind11 headers
@@ -112,7 +106,7 @@ class BuildExt(build_ext):
         if sys.platform == 'darwin':
             mac_osx_version = float('.'.join(platform.mac_ver()[0].split('.')[:2]))
             os.environ['MACOSX_DEPLOYMENT_TARGET'] = str(mac_osx_version)
-            all_flags = ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+            all_flags = ['-stdlib=libc++', '-mmacosx-version-min=13.3']
             if has_flag(self.compiler, [all_flags[0]]):
                 self.c_opts['unix'] += [all_flags[0]]
             elif has_flag(self.compiler, all_flags):
@@ -152,43 +146,38 @@ def _get_readme():
 
 
 setup(
-    name='floret',
+    name='fastfloret',
     version=__version__,
-    author='Explosion',
-    author_email='contact@explosion.ai',
-    description='floret Python bindings',
+    author='spiqueras',
+    author_email='piqueras.santi@gmail.com',
+    description='fasttext + floret Python bindings',
     long_description=_get_readme(),
     long_description_content_type="text/markdown",
     ext_modules=ext_modules,
-    url='https://github.com/explosion/floret',
-    license='MIT',
+    url='https://github.com/spiqueras/fastfloret',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
         'Topic :: Software Development',
         'Topic :: Scientific/Engineering',
-        'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Operating System :: Unix',
         'Operating System :: MacOS',
     ],
-    install_requires=['numpy'],
+    install_requires=['numpy>2'],
     cmdclass={'build_ext': BuildExt},
     packages=[
-        str('floret'),
-        str('floret.util'),
-        str('floret.tests'),
+        str('fastfloret'),
+        str('fastfloret.util'),
+        str('fastfloret.tests'),
     ],
-    package_dir={str(''): str('python/floret_module')},
+    package_dir={str(''): str('python/fastfloret_module')},
     package_data={"": ["*.txt", "*.md"]},
     zip_safe=False,
 )

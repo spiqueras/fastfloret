@@ -12,15 +12,10 @@
 # Have a look at tests/fetch_test_data.sh
 # You will then need to point this script to the corresponding folder
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import unittest
 import argparse
-from floret.tests import gen_tests
-from floret.tests import gen_unit_tests
+from fastfloret.tests import gen_tests
+from fastfloret.tests import gen_unit_tests
 
 
 def run_tests(tests):

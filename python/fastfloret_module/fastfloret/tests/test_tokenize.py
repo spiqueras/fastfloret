@@ -1,4 +1,4 @@
-import floret
+import fastfloret as floret
 
 
 def test_tokenize():

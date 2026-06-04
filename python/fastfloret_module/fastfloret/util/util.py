@@ -14,21 +14,13 @@
 # example, this file should not use sklearn and matplotlib to produce a t-sne
 # plot of word embeddings or such.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import numpy as np
 import sys
 import shutil
 import os
 import gzip
 
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
+from urllib.request import urlopen
 
 
 valid_lang_ids = {"af", "sq", "als", "am", "ar", "an", "hy", "as", "ast",
