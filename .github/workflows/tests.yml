@@ -10,7 +10,7 @@ on:
       - "*.md"
 
 env:
-  MODULE_NAME: 'floret'
+  MODULE_NAME: 'fastfloret'
   RUN_MYPY: 'false'
 
 jobs:
