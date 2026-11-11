@@ -12,3 +12,4 @@ dist
 /floret
 python/floret_module/*.so
 __pycache__
+.nox
