@@ -171,6 +171,7 @@ setup(
         'Operating System :: MacOS',
     ],
     install_requires=['numpy>=1.26.4,<3.0.0'],
+    extras_require={'test': ['pytest']},
     python_requires=">=3.11",
     cmdclass={'build_ext': BuildExt},
     packages=[
