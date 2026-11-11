@@ -78,7 +78,7 @@ Or install from source in developer mode:
 git clone https://github.com/explosion/floret
 cd floret
 pip install -r requirements.txt
-pip install --no-build-isolation --editable .
+pip install --editable .
 ```
 
 See the [python docs](python/README.md).
@@ -291,7 +291,7 @@ For the python bindings (see the subdirectory python) you will need:
 
 - Python version 2.7 or >=3.4
 - NumPy & SciPy
-- [pybind11](https://github.com/pybind/pybind11)
+- [nanobind](https://github.com/wjakob/nanobind) (installed automatically at build time)
 
 One of the oldest distributions we successfully built and tested the Python bindings under is [Debian jessie](https://www.debian.org/releases/jessie/).
 

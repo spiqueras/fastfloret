@@ -113,7 +113,7 @@ class _floret(object):
         dim = self.get_dimension()
         b = floret.Vector(dim)
         self.f.getWordVector(b, word)
-        return np.array(b)
+        return np.array(b.numpy())
 
     def get_sentence_vector(self, text):
         """
@@ -130,7 +130,7 @@ class _floret(object):
         dim = self.get_dimension()
         b = floret.Vector(dim)
         self.f.getSentenceVector(b, text)
-        return np.array(b)
+        return np.array(b.numpy())
 
     def get_nearest_neighbors(self, word, k=10, on_unicode_error='strict'):
         return self.f.getNN(word, k, on_unicode_error)
@@ -173,7 +173,7 @@ class _floret(object):
         dim = self.get_dimension()
         b = floret.Vector(dim)
         self.f.getInputVector(b, ind)
-        return np.array(b)
+        return np.array(b.numpy())
 
     def predict(self, text, k=1, threshold=0.0, on_unicode_error='strict'):
         """
@@ -229,7 +229,7 @@ class _floret(object):
         """
         if self.f.isQuant():
             raise ValueError("Can't get quantized Matrix")
-        return np.array(self.f.getInputMatrix())
+        return np.array(self.f.getInputMatrix().numpy())
 
     def get_output_matrix(self):
         """
@@ -238,7 +238,7 @@ class _floret(object):
         """
         if self.f.isQuant():
             raise ValueError("Can't get quantized Matrix")
-        return np.array(self.f.getOutputMatrix())
+        return np.array(self.f.getOutputMatrix().numpy())
 
     def get_words(self, include_freq=False, on_unicode_error='strict'):
         """
@@ -355,8 +355,8 @@ class _floret(object):
         if input is None:
             input = ""
         self.f.quantize(
-            input, qout, cutoff, retrain, epoch, lr, thread, verbose, dsub,
-            qnorm
+            input, bool(qout), cutoff, bool(retrain), epoch, lr, thread, verbose, dsub,
+            bool(qnorm)
         )
 
     def set_matrices(self, input_matrix, output_matrix):
@@ -432,7 +432,7 @@ def _build_args(args, manually_set_args):
         if k in manually_set_args:
             a.setManual(k)
     a.output = ""  # User should use save_model
-    a.saveOutput = 0  # Never use this
+    a.saveOutput = False  # Never use this
     if a.wordNgrams <= 1 and a.maxn == 0 and len(a.autotuneValidationFile) == 0 and a.mode != mode_name.floret:
         a.bucket = 0
     if a.mode != mode_name.floret:

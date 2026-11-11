@@ -1,4 +1,0 @@
-include LICENSE
-
-recursive-include python *.md *.rst *.txt
-recursive-include src *.h
