@@ -11,44 +11,39 @@
 #include <densematrix.h>
 #include <fasttext.h>
 #include <MurmurHash3.h>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/unordered_map.h>
+#include <nanobind/stl/vector.h>
 #include <real.h>
 #include <vector.h>
 #include <cmath>
+#include <cstring>
+#include <fstream>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
 
-using namespace pybind11::literals;
-namespace py = pybind11;
+namespace nb = nanobind;
 
-py::str castToPythonString(const std::string& s, const char* onUnicodeError) {
+using RealArray1D = nb::ndarray<nb::numpy, fasttext::real, nb::ndim<1>>;
+using RealArray2D = nb::ndarray<nb::numpy, fasttext::real, nb::ndim<2>>;
+
+nb::str castToPythonString(const std::string& s, const char* onUnicodeError) {
   PyObject* handle = PyUnicode_DecodeUTF8(s.data(), s.length(), onUnicodeError);
   if (!handle) {
-    throw py::error_already_set();
+    throw nb::python_error();
   }
-
-  // py::str's constructor from a PyObject assumes the string has been encoded
-  // for python 2 and not encoded for python 3 :
-  // https://github.com/pybind/pybind11/blob/ccbe68b084806dece5863437a7dc93de20bd9b15/include/pybind11/pytypes.h#L930
-#if PY_MAJOR_VERSION < 3
-  PyObject* handle_encoded =
-      PyUnicode_AsEncodedString(handle, "utf-8", onUnicodeError);
-  Py_DECREF(handle);
-  handle = handle_encoded;
-#endif
-
-  py::str handle_str = py::str(handle);
-  Py_DECREF(handle);
-  return handle_str;
+  return nb::steal<nb::str>(handle);
 }
 
-std::vector<std::pair<fasttext::real, py::str>> castToPythonString(
+std::vector<std::pair<fasttext::real, nb::str>> castToPythonString(
     const std::vector<std::pair<fasttext::real, std::string>>& predictions,
     const char* onUnicodeError) {
-  std::vector<std::pair<fasttext::real, py::str>> transformedPredictions;
+  std::vector<std::pair<fasttext::real, nb::str>> transformedPredictions;
 
   for (const auto& prediction : predictions) {
     transformedPredictions.emplace_back(
@@ -59,15 +54,15 @@ std::vector<std::pair<fasttext::real, py::str>> castToPythonString(
   return transformedPredictions;
 }
 
-std::pair<std::vector<py::str>, std::vector<py::str>> getLineText(
+std::pair<std::vector<nb::str>, std::vector<nb::str>> getLineText(
     fasttext::FastText& m,
     const std::string text,
     const char* onUnicodeError) {
   std::shared_ptr<const fasttext::Dictionary> d = m.getDictionary();
   std::stringstream ioss(text);
   std::string token;
-  std::vector<py::str> words;
-  std::vector<py::str> labels;
+  std::vector<nb::str> words;
+  std::vector<nb::str> labels;
   while (d->readWord(ioss, token)) {
     uint32_t h = d->hash(token);
     int32_t wid = d->getId(token, h);
@@ -82,67 +77,67 @@ std::pair<std::vector<py::str>, std::vector<py::str>> getLineText(
     if (token == fasttext::Dictionary::EOS)
       break;
   }
-  return std::pair<std::vector<py::str>, std::vector<py::str>>(words, labels);
+  return std::pair<std::vector<nb::str>, std::vector<nb::str>>(words, labels);
 }
 
-PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
-  py::class_<fasttext::Args>(m, "args", py::module_local())
-      .def(py::init<>())
-      .def_readwrite("input", &fasttext::Args::input)
-      .def_readwrite("output", &fasttext::Args::output)
-      .def_readwrite("lr", &fasttext::Args::lr)
-      .def_readwrite("lrUpdateRate", &fasttext::Args::lrUpdateRate)
-      .def_readwrite("dim", &fasttext::Args::dim)
-      .def_readwrite("ws", &fasttext::Args::ws)
-      .def_readwrite("epoch", &fasttext::Args::epoch)
-      .def_readwrite("minCount", &fasttext::Args::minCount)
-      .def_readwrite("minCountLabel", &fasttext::Args::minCountLabel)
-      .def_readwrite("neg", &fasttext::Args::neg)
-      .def_readwrite("wordNgrams", &fasttext::Args::wordNgrams)
-      .def_readwrite("loss", &fasttext::Args::loss)
-      .def_readwrite("model", &fasttext::Args::model)
-      .def_readwrite("bucket", &fasttext::Args::bucket)
-      .def_readwrite("minn", &fasttext::Args::minn)
-      .def_readwrite("maxn", &fasttext::Args::maxn)
-      .def_readwrite("mode", &fasttext::Args::mode)
-      .def_readwrite("hashCount", &fasttext::Args::hashCount)
-      .def_readwrite("thread", &fasttext::Args::thread)
-      .def_readwrite("t", &fasttext::Args::t)
-      .def_readwrite("label", &fasttext::Args::label)
-      .def_readwrite("verbose", &fasttext::Args::verbose)
-      .def_readwrite("pretrainedVectors", &fasttext::Args::pretrainedVectors)
-      .def_readwrite("saveOutput", &fasttext::Args::saveOutput)
-      .def_readwrite("seed", &fasttext::Args::seed)
+NB_MODULE(fastfloret_pybind, m) {
+  nb::class_<fasttext::Args>(m, "args")
+      .def(nb::init<>())
+      .def_rw("input", &fasttext::Args::input)
+      .def_rw("output", &fasttext::Args::output)
+      .def_rw("lr", &fasttext::Args::lr)
+      .def_rw("lrUpdateRate", &fasttext::Args::lrUpdateRate)
+      .def_rw("dim", &fasttext::Args::dim)
+      .def_rw("ws", &fasttext::Args::ws)
+      .def_rw("epoch", &fasttext::Args::epoch)
+      .def_rw("minCount", &fasttext::Args::minCount)
+      .def_rw("minCountLabel", &fasttext::Args::minCountLabel)
+      .def_rw("neg", &fasttext::Args::neg)
+      .def_rw("wordNgrams", &fasttext::Args::wordNgrams)
+      .def_rw("loss", &fasttext::Args::loss)
+      .def_rw("model", &fasttext::Args::model)
+      .def_rw("bucket", &fasttext::Args::bucket)
+      .def_rw("minn", &fasttext::Args::minn)
+      .def_rw("maxn", &fasttext::Args::maxn)
+      .def_rw("mode", &fasttext::Args::mode)
+      .def_rw("hashCount", &fasttext::Args::hashCount)
+      .def_rw("thread", &fasttext::Args::thread)
+      .def_rw("t", &fasttext::Args::t)
+      .def_rw("label", &fasttext::Args::label)
+      .def_rw("verbose", &fasttext::Args::verbose)
+      .def_rw("pretrainedVectors", &fasttext::Args::pretrainedVectors)
+      .def_rw("saveOutput", &fasttext::Args::saveOutput)
+      .def_rw("seed", &fasttext::Args::seed)
 
-      .def_readwrite("qout", &fasttext::Args::qout)
-      .def_readwrite("retrain", &fasttext::Args::retrain)
-      .def_readwrite("qnorm", &fasttext::Args::qnorm)
-      .def_readwrite("cutoff", &fasttext::Args::cutoff)
-      .def_readwrite("dsub", &fasttext::Args::dsub)
+      .def_rw("qout", &fasttext::Args::qout)
+      .def_rw("retrain", &fasttext::Args::retrain)
+      .def_rw("qnorm", &fasttext::Args::qnorm)
+      .def_rw("cutoff", &fasttext::Args::cutoff)
+      .def_rw("dsub", &fasttext::Args::dsub)
 
-      .def_readwrite(
+      .def_rw(
           "autotuneValidationFile", &fasttext::Args::autotuneValidationFile)
-      .def_readwrite("autotuneMetric", &fasttext::Args::autotuneMetric)
-      .def_readwrite(
+      .def_rw("autotuneMetric", &fasttext::Args::autotuneMetric)
+      .def_rw(
           "autotunePredictions", &fasttext::Args::autotunePredictions)
-      .def_readwrite("autotuneDuration", &fasttext::Args::autotuneDuration)
-      .def_readwrite("autotuneModelSize", &fasttext::Args::autotuneModelSize)
+      .def_rw("autotuneDuration", &fasttext::Args::autotuneDuration)
+      .def_rw("autotuneModelSize", &fasttext::Args::autotuneModelSize)
       .def("setManual", [](fasttext::Args& m, const std::string& argName) {
         m.setManual(argName);
       });
 
-  py::enum_<fasttext::model_name>(m, "model_name", py::module_local())
+  nb::enum_<fasttext::model_name>(m, "model_name")
       .value("cbow", fasttext::model_name::cbow)
       .value("skipgram", fasttext::model_name::sg)
       .value("supervised", fasttext::model_name::sup);
 
-  py::enum_<fasttext::loss_name>(m, "loss_name", py::module_local())
+  nb::enum_<fasttext::loss_name>(m, "loss_name")
       .value("hs", fasttext::loss_name::hs)
       .value("ns", fasttext::loss_name::ns)
       .value("softmax", fasttext::loss_name::softmax)
       .value("ova", fasttext::loss_name::ova);
 
-  py::enum_<fasttext::metric_name>(m, "metric_name", py::module_local())
+  nb::enum_<fasttext::metric_name>(m, "metric_name")
       .value("f1score", fasttext::metric_name::f1score)
       .value("f1scoreLabel", fasttext::metric_name::f1scoreLabel)
       .value("precisionAtRecall", fasttext::metric_name::precisionAtRecall)
@@ -154,7 +149,7 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
           "recallAtPrecisionLabel",
           fasttext::metric_name::recallAtPrecisionLabel);
 
-  py::enum_<fasttext::mode_name>(m, "mode_name", py::module_local())
+  nb::enum_<fasttext::mode_name>(m, "mode_name")
       .value("fasttext", fasttext::mode_name::fasttext)
       .value("floret", fasttext::mode_name::floret);
       // not exported into the parent scope because the names clash
@@ -170,37 +165,34 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
           ft.train(a);
         }
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
 
-  py::class_<fasttext::Vector>(m, "Vector", py::buffer_protocol(), py::module_local())
-      .def(py::init<long long>())
-      .def_buffer([](fasttext::Vector& m) -> py::buffer_info {
-        return py::buffer_info(
-            m.data(),
-            sizeof(fasttext::real),
-            py::format_descriptor<fasttext::real>::format(),
-            1,
-            {m.size()},
-            {sizeof(fasttext::real)});
-      });
+  nb::class_<fasttext::Vector>(m, "Vector")
+      .def(nb::init<int64_t>())
+      .def(
+          "numpy",
+          [](fasttext::Vector& v) {
+            return RealArray1D(v.data(), {static_cast<size_t>(v.size())});
+          },
+          nb::rv_policy::reference_internal,
+          "Return a NumPy view of the vector's data.");
 
-  py::class_<fasttext::DenseMatrix>(
-      m, "DenseMatrix", py::buffer_protocol(), py::module_local())
-      .def(py::init<>())
-      .def(py::init<long long, long long>())
-      .def_buffer([](fasttext::DenseMatrix& m) -> py::buffer_info {
-        return py::buffer_info(
-            m.data(),
-            sizeof(fasttext::real),
-            py::format_descriptor<fasttext::real>::format(),
-            2,
-            {m.size(0), m.size(1)},
-            {sizeof(fasttext::real) * m.size(1),
-             sizeof(fasttext::real) * (int64_t)1});
-      });
+  nb::class_<fasttext::DenseMatrix>(m, "DenseMatrix")
+      .def(nb::init<>())
+      .def(nb::init<int64_t, int64_t>())
+      .def(
+          "numpy",
+          [](fasttext::DenseMatrix& dm) {
+            return RealArray2D(
+                dm.data(),
+                {static_cast<size_t>(dm.size(0)),
+                 static_cast<size_t>(dm.size(1))});
+          },
+          nb::rv_policy::reference_internal,
+          "Return a NumPy view of the matrix's data.");
 
-  py::class_<fasttext::Meter>(m, "Meter", py::module_local())
-      .def(py::init<bool>())
+  nb::class_<fasttext::Meter>(m, "Meter")
+      .def(nb::init<bool>())
       .def("scoreVsTrue", &fasttext::Meter::scoreVsTrue)
       .def(
           "precisionRecallCurveLabel",
@@ -228,42 +220,42 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
           (double (fasttext::Meter::*)(double) const) &
               fasttext::Meter::recallAtPrecision);
 
-  py::class_<fasttext::FastText>(m, "fasttext", py::module_local())
-      .def(py::init<>())
+  nb::class_<fasttext::FastText>(m, "fasttext")
+      .def(nb::init<>())
       .def("getArgs", &fasttext::FastText::getArgs)
       .def(
           "getInputMatrix",
           [](fasttext::FastText& m) {
             std::shared_ptr<const fasttext::DenseMatrix> mm =
                 m.getInputMatrix();
-            return mm.get();
+            return const_cast<fasttext::DenseMatrix*>(mm.get());
           },
-          pybind11::return_value_policy::reference)
+          nb::rv_policy::reference)
       .def(
           "getOutputMatrix",
           [](fasttext::FastText& m) {
             std::shared_ptr<const fasttext::DenseMatrix> mm =
                 m.getOutputMatrix();
-            return mm.get();
+            return const_cast<fasttext::DenseMatrix*>(mm.get());
           },
-          pybind11::return_value_policy::reference)
+          nb::rv_policy::reference)
       .def(
           "setMatrices",
           [](fasttext::FastText& m,
-             py::buffer inputMatrixBuffer,
-             py::buffer outputMatrixBuffer) {
-            py::buffer_info inputMatrixInfo = inputMatrixBuffer.request();
-            py::buffer_info outputMatrixInfo = outputMatrixBuffer.request();
-
+             nb::ndarray<const float, nb::ndim<2>, nb::c_contig, nb::device::cpu>
+                 inputMatrix,
+             nb::ndarray<const float, nb::ndim<2>, nb::c_contig, nb::device::cpu>
+                 outputMatrix) {
+            // DenseMatrix copies the data, so the arrays need not outlive it
             m.setMatrices(
                 std::make_shared<fasttext::DenseMatrix>(
-                    inputMatrixInfo.shape[0],
-                    inputMatrixInfo.shape[1],
-                    static_cast<float*>(inputMatrixInfo.ptr)),
+                    inputMatrix.shape(0),
+                    inputMatrix.shape(1),
+                    const_cast<float*>(inputMatrix.data())),
                 std::make_shared<fasttext::DenseMatrix>(
-                    outputMatrixInfo.shape[0],
-                    outputMatrixInfo.shape[1],
-                    static_cast<float*>(outputMatrixInfo.ptr)));
+                    outputMatrix.shape(0),
+                    outputMatrix.shape(1),
+                    const_cast<float*>(outputMatrix.data())));
           })
       .def(
           "loadModel",
@@ -335,22 +327,21 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
              const std::vector<std::string> lines,
              const char* onUnicodeError) {
             std::shared_ptr<const fasttext::Dictionary> d = m.getDictionary();
-            std::vector<std::vector<py::str>> all_words;
-            std::vector<std::vector<py::str>> all_labels;
+            std::vector<std::vector<nb::str>> all_words;
+            std::vector<std::vector<nb::str>> all_labels;
             for (const auto& text : lines) {
               auto pair = getLineText(m, text, onUnicodeError);
               all_words.push_back(pair.first);
               all_labels.push_back(pair.second);
             }
             return std::pair<
-                std::vector<std::vector<py::str>>,
-                std::vector<std::vector<py::str>>>(all_words, all_labels);
+                std::vector<std::vector<nb::str>>,
+                std::vector<std::vector<nb::str>>>(all_words, all_labels);
           })
       .def(
           "getVocab",
           [](fasttext::FastText& m, const char* onUnicodeError) {
-            py::str s;
-            std::vector<py::str> vocab_list;
+            std::vector<nb::str> vocab_list;
             std::vector<int64_t> vocab_freq;
             std::shared_ptr<const fasttext::Dictionary> d = m.getDictionary();
             vocab_freq = d->getCounts(fasttext::entry_type::word);
@@ -358,13 +349,13 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
               vocab_list.push_back(
                   castToPythonString(d->getWord(i), onUnicodeError));
             }
-            return std::pair<std::vector<py::str>, std::vector<int64_t>>(
+            return std::pair<std::vector<nb::str>, std::vector<int64_t>>(
                 vocab_list, vocab_freq);
           })
       .def(
           "getLabels",
           [](fasttext::FastText& m, const char* onUnicodeError) {
-            std::vector<py::str> labels_list;
+            std::vector<nb::str> labels_list;
             std::vector<int64_t> labels_freq;
             std::shared_ptr<const fasttext::Dictionary> d = m.getDictionary();
             labels_freq = d->getCounts(fasttext::entry_type::label);
@@ -372,7 +363,7 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
               labels_list.push_back(
                   castToPythonString(d->getLabel(i), onUnicodeError));
             }
-            return std::pair<std::vector<py::str>, std::vector<int64_t>>(
+            return std::pair<std::vector<nb::str>, std::vector<int64_t>>(
                 labels_list, labels_freq);
           })
       .def(
@@ -425,28 +416,31 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
              int32_t k,
              fasttext::real threshold,
              const char* onUnicodeError) {
-            std::vector<py::array_t<fasttext::real>> allProbabilities;
-            std::vector<std::vector<py::str>> allLabels;
+            std::vector<RealArray1D> allProbabilities;
+            std::vector<std::vector<nb::str>> allLabels;
             std::vector<std::pair<fasttext::real, std::string>> predictions;
 
             for (const std::string& text : lines) {
               std::stringstream ioss(text);
               m.predictLine(ioss, predictions, k, threshold);
-              std::vector<fasttext::real> probabilities;
-              std::vector<py::str> labels;
+              std::vector<nb::str> labels;
 
-              for (const auto& prediction : predictions) {
-                probabilities.push_back(prediction.first);
+              const size_t n = predictions.size();
+              fasttext::real* probabilities = new fasttext::real[n];
+              nb::capsule owner(probabilities, [](void* p) noexcept {
+                delete[] static_cast<fasttext::real*>(p);
+              });
+              for (size_t i = 0; i < n; i++) {
+                probabilities[i] = predictions[i].first;
                 labels.push_back(
-                    castToPythonString(prediction.second, onUnicodeError));
+                    castToPythonString(predictions[i].second, onUnicodeError));
               }
 
-              allProbabilities.emplace_back(
-                  probabilities.size(), probabilities.data());
-              allLabels.push_back(labels);
+              allProbabilities.push_back(RealArray1D(probabilities, {n}, owner));
+              allLabels.push_back(std::move(labels));
             }
 
-            return make_pair(allLabels, allProbabilities);
+            return std::make_pair(allLabels, allProbabilities);
           })
       .def(
           "testLabel",
@@ -461,12 +455,13 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
             fasttext::Meter meter(false);
             m.test(ifs, k, threshold, meter);
             std::shared_ptr<const fasttext::Dictionary> d = m.getDictionary();
-            std::unordered_map<std::string, py::dict> returnedValue;
+            std::unordered_map<std::string, nb::dict> returnedValue;
             for (int32_t i = 0; i < d->nlabels(); i++) {
-              returnedValue[d->getLabel(i)] = py::dict(
-                  "precision"_a = meter.precision(i),
-                  "recall"_a = meter.recall(i),
-                  "f1score"_a = meter.f1Score(i));
+              nb::dict scores;
+              scores["precision"] = meter.precision(i);
+              scores["recall"] = meter.recall(i);
+              scores["f1score"] = meter.f1Score(i);
+              returnedValue[d->getLabel(i)] = scores;
             }
 
             return returnedValue;
@@ -524,14 +519,14 @@ PYBIND11_MODULE(fastfloret_pybind, m, py::mod_gil_not_used()) {
             std::vector<int32_t> ngrams;
             std::shared_ptr<const fasttext::Dictionary> d = m.getDictionary();
             d->getSubwords(word, ngrams, subwords);
-            std::vector<py::str> transformedSubwords;
+            std::vector<nb::str> transformedSubwords;
 
             for (const auto& subword : subwords) {
               transformedSubwords.push_back(
                   castToPythonString(subword, onUnicodeError));
             }
 
-            return std::pair<std::vector<py::str>, std::vector<int32_t>>(
+            return std::pair<std::vector<nb::str>, std::vector<int32_t>>(
                 transformedSubwords, ngrams);
           })
       .def("isQuant", [](fasttext::FastText& m) { return m.isQuant(); });
