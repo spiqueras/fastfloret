@@ -2,12 +2,14 @@ name: wheels
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
   pull_request:
     paths-ignore:
       - "*.md"
+
+permissions:
+  contents: read
 
 jobs:
   build_wheels:
@@ -58,3 +60,27 @@ jobs:
           name: cibw-sdist
           path: dist/*.tar.gz
           if-no-files-found: error
+
+  upload_all:
+    needs: [build_wheels, make_sdist]
+    environment: pypi
+    permissions:
+      id-token: write
+      attestations: write
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download wheels and sdist
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      - name: Generate artifact attestations
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: "dist/*"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
