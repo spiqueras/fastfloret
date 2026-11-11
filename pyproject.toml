@@ -23,7 +23,10 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Free Threading",
+    "Programming Language :: C++",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
     "Operating System :: POSIX",
@@ -50,6 +53,5 @@ sdist.exclude = [".github", ".idea", ".nox", "uv.lock", "data", "dist", "build"]
 
 [tool.cibuildwheel]
 build-frontend = "build[uv]"
-skip = ["cp38-*", "cp39-*", "cp310-*"]
 test-extras = ["test"]
 test-command = "pytest --pyargs fastfloret -Werror"
