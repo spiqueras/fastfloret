@@ -170,7 +170,8 @@ setup(
         'Operating System :: Unix',
         'Operating System :: MacOS',
     ],
-    install_requires=['numpy>2'],
+    install_requires=['numpy>=1.26.4,<3.0.0'],
+    python_requires=">=3.11",
     cmdclass={'build_ext': BuildExt},
     packages=[
         str('fastfloret'),

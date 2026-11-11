@@ -5,7 +5,7 @@ to build and run in modern (>3.13) Python.
 
 A rough overview of the (intended) changes:
 - [Fix the build](https://github.com/explosion/floret/issues/31)
-- Allow using numpy 2 and up and make it mandatory
+- Allow using numpy 2
 - Generate and upload updated wheels to Pypi
 
 For compatibility, you may import it as floret:
